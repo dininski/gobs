@@ -71,7 +71,8 @@ func readRequest(url string, expectedCode int) (byteData []byte, err error) {
     }
     
     if response.StatusCode != expectedCode {
-        return nil, errors.New("Unexpected error")
+        gobsError := gobsErrorFromHttpRequest(response)
+        return nil, gobsError
     }
 
     body, requestError := getResponseBody(response)
