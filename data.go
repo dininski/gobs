@@ -1,74 +1,77 @@
 package gobs
-import "fmt"
-import "net/http"
-import "io/ioutil"
-import "encoding/json"
+
+import (
+    "fmt"
+    "net/http"
+    "io/ioutil"
+    "encoding/json"
+    "reflect"
+    "errors"
+)
 
 type data struct {
     settings *settings
 }
 
-func (d data) getDataUrl(id string) string {
+func (d data) getDataUrl(contentType string) string {
     url := fmt.Sprintf(
-    "%s:%s/%s/%s/%s/%s",
+    "%s:%s/%s/%s/%s",
     d.settings.Scheme,
     d.settings.ApiUrl,
     d.settings.Version,
     d.settings.APIKey,
-    "Type1",
-    id)
-
-    fmt.Println(url)
+    contentType)
 
     return url
 }
 
-func (d data) GetById(id string, dataItem interface{}) (err error) {
-    //    st := reflect.TypeOf(*dataItem)
-    //    field, ok := st.FieldByName("DataItem")
-    //    fmt.Println(field, ok)
-    return nil
-    //    return d.readOne(id, dataItem)
+func (d data) getDataUrlWithId(contentType string, id string) string {
+    url := fmt.Sprintf("%s/%s", d.getDataUrl(contentType), id)
+    fmt.Println(url)
+    return url
 }
 
-func (d data) Get() (dataItemResult []DataItem, err error) {
-    return d.readMany("")
+func (d data) GetById(id string, dataObject interface{}) (err error) {
+    contentTypeName, error := getContentTypeName(dataObject)
+    if error != nil {
+        return error
+    }
+
+    return d.readOne(contentTypeName, id, dataObject)
 }
 
-func (d data) GetByFilter(filter string) (dataItemResult []DataItem, err error) {
-    return d.readMany(filter)
+func getContentTypeName(item interface{}) (string, error) {
+    structField, ok := reflect.TypeOf(item).Elem().FieldByName("DataItem") 
+    if !ok {
+        return "", errors.New("Could not obtain content type from name")
+    }
+
+    return structField.Tag.Get("contentType"), nil
 }
 
-func (d data) readOne(id string, dataItem *DataItem) (err error) {
-    dataUrl := d.getDataUrl(id)
-    byteData, err := readRequest(dataUrl)
+type singleResult struct {
+    Result interface{}
+}
+
+func (d data) readOne(contentType string, id string, dataObject interface{}) error {
+    dataUrl := d.getDataUrlWithId(contentType, id)
+    byteData, err := readRequest(dataUrl, http.StatusOK)
     if err != nil {
         return err
     }
 
-    *dataItem, err = parseForSingle(byteData)
+    parseForSingle(byteData, dataObject)
     return err
 }
 
-func (d data) readMany(filter string) (dataResult []DataItem, err error) {
-    dataUrl := d.getDataUrl("")
-    byteData, err := readRequest(dataUrl)
-    if err != nil {
-        return nil, err
-    }
-
-    dataItems, err := parseForMultiple(byteData)
-    if err != nil {
-        return nil, err
-    }
-
-    return dataItems, nil
-}
-
-func readRequest(url string) (byteData []byte, err error) {
+func readRequest(url string, expectedCode int) (byteData []byte, err error) {
     response, error := http.Get(url)
     if error != nil {
         return nil, error
+    }
+    
+    if response.StatusCode != expectedCode {
+        return nil, errors.New("Unexpected error")
     }
 
     body, requestError := getResponseBody(response)
@@ -77,6 +80,14 @@ func readRequest(url string) (byteData []byte, err error) {
     }
 
     return body, nil
+}
+
+func parseForSingle(bytedata []byte, dataObject interface{}) error {
+    single := singleResult{Result: dataObject}
+    error := json.Unmarshal(bytedata, &single)
+    res := string(bytedata)
+    fmt.Println(res)
+    return error
 }
 
 func getResponseBody(response *http.Response) (body []byte, err error) {
@@ -89,28 +100,41 @@ func getResponseBody(response *http.Response) (body []byte, err error) {
     return byteBody, nil
 }
 
-func parseForSingle(bytedata []byte) (data DataItem, err error) {
-    single := singleResult{}
-    error := json.Unmarshal(bytedata, &single)
-    fmt.Println("Single:")
-    fmt.Println(single)
-    fmt.Println("Single end")
-    res := string(bytedata)
-    fmt.Println(res)
-    return single.Result, error
-}
-
-func parseForMultiple(bytedata []byte) (data []DataItem, err error) {
-    multi := multipleItems{}
-    error := json.Unmarshal(bytedata, &multi)
-    return multi.Result, error
-}
-
-type singleResult struct {
-    Result DataItem
-}
-
-type multipleItems struct {
-    Result []DataItem
-    Count int
-}
+//func (d data) Get() (dataItemResult []DataItem, err error) {
+//    return d.readMany("")
+//}
+//
+//func (d data) GetByFilter(filter string) (dataItemResult []DataItem, err error) {
+//    return d.readMany(filter)
+//}
+//
+//
+//func (d data) readMany(filter string) (dataResult []DataItem, err error) {
+//    dataUrl := d.getDataUrlWithId("", "")
+//    byteData, err := readRequest(dataUrl)
+//    if err != nil {
+//        return nil, err
+//    }
+//
+//    dataItems, err := parseForMultiple(byteData)
+//    if err != nil {
+//        return nil, err
+//    }
+//
+//    return dataItems, nil
+//}
+//
+//
+//
+//
+//func parseForMultiple(bytedata []byte) (data []DataItem, err error) {
+//    multi := multipleResult{}
+//    error := json.Unmarshal(bytedata, &multi)
+//    return multi.Result, error
+//}
+//
+//
+//type multipleResult struct {
+//    Result []DataItem
+//    Count int
+//}
