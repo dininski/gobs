@@ -1,4 +1,4 @@
 # README
+![build status][ci-status]
 
-TODO:
-Finalize the data object model
+[ci-status]: (https://api.travis-ci.org/dininski/gobs.svg)
