@@ -2,7 +2,6 @@ package gobs
 
 import (
     "testing"
-    "os"
 )
 
 type customType struct  {
@@ -11,15 +10,13 @@ type customType struct  {
 
 func TestGetById(t *testing.T) {
     item := customType{}
-    apiKey := os.Getenv("APIKey")
-    id := os.Getenv("TypeId")
-    instance := New(apiKey)
-    error := instance.Data.GetById(id, &item)
+    error := testInstance.Data.GetById(configuration.TypeId, &item)
     if error != nil {
         t.Errorf(error.Error())
+        return
     }
     
-    if item.Id != id {
+    if item.Id != configuration.TypeId {
         t.Errorf("Id not set correctly when getting item")
     }
 }
