@@ -3,7 +3,8 @@
 
 ## Running tests
 
-To setup the tests you need to set the following environment variables:
+To run the tests you can either create a tests-config.json file in the root of the project os to use environment variables.
+The required values are:
 
 | Name | Description |
 |---|---|
