@@ -9,6 +9,27 @@ import (
     "errors"
 )
 
+func (d data) GetById(id string, dataObject interface{}) (err error) {
+    contentTypeName, error := getContentTypeName(dataObject)
+    if error != nil {
+        return error
+    }
+
+    return d.readOne(contentTypeName, id, dataObject)
+}
+
+func (d data) Get(dataObject interface{}) error {
+    contentTypeName, err := getContentTypeName(dataObject)
+
+    if err != nil {
+        return err
+    }
+
+    d.readMany(contentTypeName, dataObject)
+    return nil
+}
+
+
 type data struct {
     settings *settings
 }
@@ -31,22 +52,26 @@ func (d data) getDataUrlWithId(contentType string, id string) string {
     return url
 }
 
-func (d data) GetById(id string, dataObject interface{}) (err error) {
-    contentTypeName, error := getContentTypeName(dataObject)
-    if error != nil {
-        return error
-    }
-
-    return d.readOne(contentTypeName, id, dataObject)
-}
-
 func getContentTypeName(item interface{}) (string, error) {
-    structField, ok := reflect.TypeOf(item).Elem().FieldByName("DataItem") 
-    if !ok {
-        return "", errors.New("Could not obtain content type from name")
-    }
+    itemType := reflect.TypeOf(item).Elem()
+    itemTypeKind := itemType.Kind()
+    switch itemTypeKind {
+        case reflect.Slice:
+        structField, ok := itemType.Elem().FieldByName("DataItem")
+        if !ok {
+            return "", errors.New("Could not obtain content type from name")
+        }
+        
+        return structField.Tag.Get("contentType"), nil
+        default:
+        structField, ok := itemType.FieldByName("DataItem")
 
-    return structField.Tag.Get("contentType"), nil
+        if !ok {
+            return "", errors.New("Could not obtain content type from name")
+        }
+
+        return structField.Tag.Get("contentType"), nil
+    }
 }
 
 type singleResult struct {
@@ -64,12 +89,35 @@ func (d data) readOne(contentType string, id string, dataObject interface{}) err
     return err
 }
 
+func (d data) readMany(contentType string, dataObject interface{}) error {
+    dataUrl := d.getDataUrl(contentType)
+    byteData, err := readRequest(dataUrl, http.StatusOK)
+    if err != nil {
+        return err
+    }
+
+    err = parseForMultiple(byteData, dataObject)
+    return err
+}
+
+func parseForMultiple(bytedata []byte, dataObject interface{}) error {
+    multi := multipleResult{Result: dataObject}
+    error := json.Unmarshal(bytedata, &multi)
+    return error
+}
+
+
+type multipleResult struct {
+    Result interface{}
+    Count int
+}
+
 func readRequest(url string, expectedCode int) (byteData []byte, err error) {
     response, error := http.Get(url)
     if error != nil {
         return nil, error
     }
-    
+
     if response.StatusCode != expectedCode {
         gobsError := gobsErrorFromHttpRequest(response)
         return nil, gobsError
@@ -101,41 +149,13 @@ func getResponseBody(response *http.Response) (body []byte, err error) {
     return byteBody, nil
 }
 
-//func (d data) Get() (dataItemResult []DataItem, err error) {
-//    return d.readMany("")
-//}
 //
 //func (d data) GetByFilter(filter string) (dataItemResult []DataItem, err error) {
 //    return d.readMany(filter)
 //}
 //
 //
-//func (d data) readMany(filter string) (dataResult []DataItem, err error) {
-//    dataUrl := d.getDataUrlWithId("", "")
-//    byteData, err := readRequest(dataUrl)
-//    if err != nil {
-//        return nil, err
-//    }
-//
-//    dataItems, err := parseForMultiple(byteData)
-//    if err != nil {
-//        return nil, err
-//    }
-//
-//    return dataItems, nil
-//}
 //
 //
 //
 //
-//func parseForMultiple(bytedata []byte) (data []DataItem, err error) {
-//    multi := multipleResult{}
-//    error := json.Unmarshal(bytedata, &multi)
-//    return multi.Result, error
-//}
-//
-//
-//type multipleResult struct {
-//    Result []DataItem
-//    Count int
-//}

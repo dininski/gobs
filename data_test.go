@@ -20,3 +20,14 @@ func TestGetById(t *testing.T) {
         t.Errorf("Id not set correctly when getting item")
     }
 }
+
+func TestGetMultipleNoFilter(t *testing.T) {
+    items := []customType{}
+    if error := testInstance.Data.Get(&items); error != nil {
+        t.Errorf(error.Error())
+    }
+
+    if len(items) == 0 {
+        t.Errorf("Incorrect number of elements")
+    }
+}
