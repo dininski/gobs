@@ -47,7 +47,7 @@ func TestGetWithSimpleFilter(t *testing.T) {
 func TestGetWithMoreComplexFilter(t *testing.T) {
     items := []customType{}
     // should be additionally expanded as data.where.and.where.or.where.find....
-    if error := testInstance.Data.Where("Id", configuration.TypeId).Where("SomeValue", 1).Find(&items); error != nil {
+    if error := testInstance.Data.Where("Id", configuration.TypeId).Where("SomeValue", 2).Find(&items); error != nil {
         t.Errorf(error.Error())
     }
 

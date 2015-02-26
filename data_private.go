@@ -125,7 +125,6 @@ func (d data) applyFiltering(req *http.Request) {
     
     filterObject, _ := json.Marshal(filterMap)
     req.Header.Add("X-Everlive-Filter", string(filterObject))
-    fmt.Println(req.Header)
 }
 
 func parseForSingle(bytedata []byte, dataObject interface{}) error {

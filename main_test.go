@@ -4,7 +4,7 @@ import (
     "testing"
     "os"
     "encoding/json"
-    "fmt")
+)
 
 type testConfig struct {
     APIKey string
@@ -20,8 +20,6 @@ func TestMain(m *testing.M) {
         populateConfigurationFromEnvironment()
     }
 
-    fmt.Println(configuration.APIKey)
-    fmt.Println(configuration.TypeId)
     testInstance = New(configuration.APIKey)
     os.Exit(m.Run())
 }
