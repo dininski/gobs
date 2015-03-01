@@ -7,6 +7,7 @@ import (
     "errors"
     "reflect"
     "fmt"
+    "bytes"
 )
 
 func (d data) getDataUrl(contentType string) string {
@@ -52,6 +53,61 @@ type singleResult struct {
     Result interface{}
 }
 
+type countResult struct {
+    Result int
+}
+
+func (d data) count(contentType string) (count int, err error) {
+    countUrl := fmt.Sprintf("%s/_count", d.getDataUrl(contentType))
+    byteData, err := d.readRequest(countUrl, http.StatusOK)
+    if err != nil {
+        return 0, err
+    }
+
+    result := countResult{}
+    if parseForCount(byteData, &result); err != nil {
+        return 0, err
+    }
+    
+    return result.Result, nil
+}
+
+func (d data) create(contentType string, dataObject interface{}) error {
+    dataUrl := d.getDataUrl(contentType)
+    return d.createRequest(dataUrl, dataObject, http.StatusCreated)
+}
+
+func (d data) createRequest(createUrl string, dataObject interface{}, expectedStatusCode int) error {
+    byteBody, err := json.Marshal(dataObject)
+    if err != nil {
+        return err
+    }
+    
+    req, err := http.NewRequest("POST", createUrl, bytes.NewReader(byteBody))
+    if err != nil {
+        return err
+    }
+
+    req.Header.Add("Content-type", "application/json")
+
+    response, error := client.Do(req)
+    if error != nil {
+        return error
+    }
+
+    if response.StatusCode != expectedStatusCode {
+        gobsError := gobsErrorFromHttpRequest(response)
+        return gobsError
+    }
+
+    _, requestError := getResponseBody(response)
+    if requestError != nil {
+        return requestError
+    }
+
+    return nil
+}
+
 func (d data) readOne(contentType string, id string, dataObject interface{}) error {
     dataUrl := d.getDataUrlWithId(contentType, id)
     byteData, err := d.readRequest(dataUrl, http.StatusOK)
@@ -60,7 +116,7 @@ func (d data) readOne(contentType string, id string, dataObject interface{}) err
     }
 
     parseForSingle(byteData, dataObject)
-    return err
+    return nil
 }
 
 func (d data) readMany(contentType string, dataObject interface{}) error {
@@ -71,13 +127,12 @@ func (d data) readMany(contentType string, dataObject interface{}) error {
     }
 
     err = parseForMultiple(byteData, dataObject)
-    return err
+    return nil
 }
 
 func parseForMultiple(bytedata []byte, dataObject interface{}) error {
     multi := multipleResult{Result: dataObject}
-    error := json.Unmarshal(bytedata, &multi)
-    return error
+    return json.Unmarshal(bytedata, &multi)
 }
 
 type multipleResult struct {
@@ -92,7 +147,7 @@ func (d data) readRequest(url string, expectedCode int) (byteData []byte, err er
     if err != nil {
         return nil, err
     }
-    
+
     d.applyFiltering(req)
     response, error := client.Do(req)
     if error != nil {
@@ -122,15 +177,18 @@ func (d data) applyFiltering(req *http.Request) {
     for _, filter := range d.filters {
         filterMap[filter.field] = filter.value
     }
-    
+
     filterObject, _ := json.Marshal(filterMap)
     req.Header.Add("X-Everlive-Filter", string(filterObject))
 }
 
 func parseForSingle(bytedata []byte, dataObject interface{}) error {
     single := singleResult{Result: dataObject}
-    error := json.Unmarshal(bytedata, &single)
-    return error
+    return json.Unmarshal(bytedata, &single)
+}
+
+func parseForCount(bytedata []byte, countRes *countResult) error {
+    return json.Unmarshal(bytedata, countRes)
 }
 
 func getResponseBody(response *http.Response) (body []byte, err error) {

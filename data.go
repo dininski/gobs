@@ -1,6 +1,6 @@
 package gobs
 
-func (d data) FindById(id string, dataObject interface{}) (err error) {
+func (d data) FindById(id string, dataObject interface{}) error {
     contentTypeName, error := getContentTypeName(dataObject)
     if error != nil {
         return error
@@ -24,6 +24,25 @@ func (d data) Where(field string, value interface{}) data {
     filter := filter{field: field, value:value}
     d.filters = append(d.filters, filter)
     return d
+}
+
+func (d data) Count(object interface{}) (count int, err error) {
+    contentTypeName, err := getContentTypeName(object)
+
+    if err != nil {
+        return 0, err
+    }
+    
+    return d.count(contentTypeName)
+}
+
+func (d data) Create(object interface{}) error {
+    contentTypeName, err := getContentTypeName(object)
+    if err != nil {
+        return err
+    }
+    
+    return d.create(contentTypeName, object)
 }
 
 type filter struct {
