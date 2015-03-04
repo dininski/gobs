@@ -68,7 +68,7 @@ func (d data) count(contentType string) (count int, err error) {
     if parseForCount(byteData, &result); err != nil {
         return 0, err
     }
-    
+
     return result.Result, nil
 }
 
@@ -82,7 +82,7 @@ func (d data) createRequest(createUrl string, dataObject interface{}, expectedSt
     if err != nil {
         return err
     }
-    
+
     req, err := http.NewRequest("POST", createUrl, bytes.NewReader(byteBody))
     if err != nil {
         return err
@@ -128,6 +128,41 @@ func (d data) readMany(contentType string, dataObject interface{}) error {
 
     err = parseForMultiple(byteData, dataObject)
     return nil
+}
+
+func (d data) removeMany(contentType string, dataitem interface{}) error {
+    dataUrl := d.getDataUrl(contentType)
+    _, err := d.removeRequest(dataUrl, http.StatusOK)
+    if err != nil {
+        return err
+    }
+
+    return nil
+}
+
+func (d data) removeRequest(url string, expectedCode int) (body []byte, err error) {
+    req, err := http.NewRequest("DELETE", url, nil)
+    if err != nil {
+        return nil, err
+    }
+
+    d.applyFiltering(req)
+    response, error := client.Do(req)
+    if error != nil {
+        return nil, error
+    }
+
+    if response.StatusCode != expectedCode {
+        gobsError := gobsErrorFromHttpRequest(response)
+        return nil, gobsError
+    }
+
+    body, requestError := getResponseBody(response)
+    if requestError != nil {
+        return nil, requestError
+    }
+
+    return body, nil
 }
 
 func parseForMultiple(bytedata []byte, dataObject interface{}) error {

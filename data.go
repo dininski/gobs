@@ -20,6 +20,17 @@ func (d data) Find(dataObject interface{}) error {
     return nil
 }
 
+func (d data) Remove(dataObject interface{}) error {
+    contentTypeName, err := getContentTypeName(dataObject)
+
+    if err != nil {
+        return err
+    }
+
+    d.removeMany(contentTypeName, dataObject)
+    return nil
+}
+
 func (d data) Where(field string, value interface{}) data {
     filter := filter{field: field, value:value}
     d.filters = append(d.filters, filter)
