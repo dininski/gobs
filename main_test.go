@@ -8,7 +8,11 @@ import (
 
 type testConfig struct {
     APIKey string
-    TypeId string
+}
+
+type customType struct {
+    DataItem `contentType:"TestType"`
+    SomeValue int
 }
 
 var testInstance *gobs
@@ -21,6 +25,7 @@ func TestMain(m *testing.M) {
     }
 
     testInstance = New(configuration.APIKey)
+    testInstance.Data.Remove(&customType{})
     os.Exit(m.Run())
 }
 
@@ -40,5 +45,4 @@ func populateConfigurationFromFile() error {
 
 func populateConfigurationFromEnvironment() {
     configuration.APIKey = os.Getenv("APIKey")
-    configuration.TypeId = os.Getenv("TypeId")
 }
