@@ -5,7 +5,6 @@ import (
     "net/http"
     "bytes"
 //    "fmt"
-    "fmt"
 )
 
 type request struct {
@@ -51,15 +50,7 @@ func processRequest(request request) (body []byte, err error) {
 
     if request.filter != nil {
         filterMap := request.filter.getFilter()
-        fmt.Println("Filter values: ")
-        for key, filter := range filterMap {
-            fmt.Println(key)
-            fmt.Println(filter)
-        }
-        
         filterObject, _ := json.Marshal(filterMap)
-        
-        fmt.Println(string(filterObject))
         req.Header.Add("X-Everlive-Filter", string(filterObject))
     }
 
