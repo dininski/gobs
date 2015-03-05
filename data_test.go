@@ -2,18 +2,14 @@ package gobs
 
 import (
     "testing"
-//    "fmt"
-//    "strconv"
+    "fmt"
 )
 
-type customType struct {
-    DataItem `contentType:"TestType"`
-    SomeValue int
-}
+const singleItemId string = "7c80bc3e-07c7-4145-8e0b-c21c127c2c94"
 
 func TestGetById(t *testing.T) {
     item := customType{}
-    item.Id = "CustomId"
+    item.Id = singleItemId
 
     if err := testInstance.Data.Create(&item); err != nil {
         t.Errorf(err.Error())
@@ -26,7 +22,7 @@ func TestGetById(t *testing.T) {
         return
     }
 
-    if item.Id != configuration.TypeId {
+    if item.Id != item.Id {
         t.Errorf("Id not set correctly when getting item")
     }
 }
@@ -45,7 +41,7 @@ func TestGetMultipleNoFilter(t *testing.T) {
 func TestGetWithSimpleFilter(t *testing.T) {
     items := []customType{}
     // should be additionally expanded as data.where.and.where.or.where.find....
-    if error := testInstance.Data.Where("Id", configuration.TypeId).Find(&items); error != nil {
+    if error := testInstance.Data.Where("Id", singleItemId).Find(&items); error != nil {
         t.Errorf(error.Error())
         return
     }
@@ -53,6 +49,26 @@ func TestGetWithSimpleFilter(t *testing.T) {
     if len(items) != 1 {
         t.Errorf("Incorrect number of elements")
     }
+}
+
+func TestGetWithNotFilter(t *testing.T) {
+    count, err := testInstance.Data.Count(&customType{})
+    if err != nil {
+        t.Errorf(err.Error())
+        return
+    }
+
+    itemsWhereNotCount, err := testInstance.Data.WhereNot("Id", singleItemId).Count(&customType{})
+    if err != nil {
+        t.Errorf(err.Error())
+        return
+    }
+
+    if itemsWhereNotCount != count - 1 {
+        t.Errorf(fmt.Sprintf("Expected where not to exclude the filter. Count result is: %d", itemsWhereNotCount))
+        return
+    }
+
 }
 
 func TestCreateSingleItem(t *testing.T) {
@@ -107,34 +123,35 @@ func TestGetWithMoreComplexFilter(t *testing.T) {
         t.Errorf(err.Error())
         return
     }
-    
+
     // should be additionally expanded as data.where.and.where.or.where.find....
-    if error := testInstance.Data.Where("Id", configuration.TypeId).Where("SomeValue", 2).Find(&items); error != nil {
+    if error := testInstance.Data.Where("SomeValue", 2).Find(&items); error != nil {
         t.Errorf(error.Error())
         return
     }
 
-    if len(items) != 1 {
-        t.Errorf("Incorrect number of elements")
+    elementCount := len(items)
+    if elementCount != 1 {
+        t.Errorf(fmt.Sprintf("Incorrect number of elements, expected %d to be %d", elementCount, 1))
     }
 }
 
-//func TestDeleteAllItems(t *testing.T) {
-//    simpleType := customType{}
-//    error := testInstance.Data.Remove(&simpleType)
-//    if error != nil {
-//        t.Errorf(error.Error())
-//        return
-//    }
-//
-//    count, err := testInstance.Data.Count(&simpleType)
-//
-//    if err != nil {
-//        t.Errorf(err.Error())
-//        return
-//    }
-//
-//    if count != 0 {
-//        t.Errorf("Not all items were deleted")
-//    }
-//}
+func TestDeleteAllItems(t *testing.T) {
+    simpleType := customType{}
+    error := testInstance.Data.Remove(&simpleType)
+    if error != nil {
+        t.Errorf(error.Error())
+        return
+    }
+
+    count, err := testInstance.Data.Count(&simpleType)
+
+    if err != nil {
+        t.Errorf(err.Error())
+        return
+    }
+
+    if count != 0 {
+        t.Errorf("Not all items were deleted")
+    }
+}

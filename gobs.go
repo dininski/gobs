@@ -7,7 +7,8 @@ type gobs struct {
 
 func New(APIKey string) *gobs {
     gobsSettings := getSettings(APIKey)
-    data := data{settings: &gobsSettings}
+    filterQuery := filterQuery{settings: &gobsSettings}
+    data := data{filterQuery: filterQuery}
     instance := gobs{Settings: &gobsSettings, Data: data}
     return &instance
 }
