@@ -14,15 +14,6 @@ type getFilter interface{
     getFilter() map[string]interface{}
 }
 
-func (fq filterQuery) FindById(id string, dataObject interface{}) error {
-    contentTypeName, error := getContentTypeName(dataObject)
-    if error != nil {
-        return error
-    }
-
-    return fq.readOne(contentTypeName, id, dataObject)
-}
-
 func (fq filterQuery) Find(dataObject interface{}) error {
     contentTypeName, err := getContentTypeName(dataObject)
 
@@ -30,19 +21,17 @@ func (fq filterQuery) Find(dataObject interface{}) error {
         return err
     }
 
-    fq.readMany(contentTypeName, dataObject)
-    return nil
+    return fq.readMany(contentTypeName, dataObject)
 }
 
-func (fq filterQuery) Remove(dataObject interface{}) error {
+func (fq filterQuery) RemoveMany(dataObject interface{}) error {
     contentTypeName, err := getContentTypeName(dataObject)
 
     if err != nil {
         return err
     }
 
-    fq.removeMany(contentTypeName, dataObject)
-    return nil
+    return fq.removeMany(contentTypeName, dataObject)
 }
 
 func (fq filterQuery) Where(field string, value interface{}) filterQuery {

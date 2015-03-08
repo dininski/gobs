@@ -20,9 +20,9 @@ func (fq filterQuery) count(contentType string) (count int, err error) {
     return result.Result, nil
 }
 
-func (fq filterQuery) readOne(contentType string, id string, dataObject interface{}) error {
-    dataUrl := getDataUrlWithId(*fq.settings, contentType, id)
-    byteData, err := readRequest(dataUrl, fq, http.StatusOK)
+func (d data) readOne(contentType string, id string, dataObject interface{}) error {
+    dataUrl := getDataUrlWithId(*d.settings, contentType, id)
+    byteData, err := readRequest(dataUrl, d, http.StatusOK)
     if err != nil {
         return err
     }

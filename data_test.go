@@ -138,7 +138,7 @@ func TestGetWithMoreComplexFilter(t *testing.T) {
 
 func TestDeleteAllItems(t *testing.T) {
     simpleType := customType{}
-    error := testInstance.Data.Remove(&simpleType)
+    error := testInstance.Data.RemoveMany(&simpleType)
     if error != nil {
         t.Errorf(error.Error())
         return
@@ -153,5 +153,39 @@ func TestDeleteAllItems(t *testing.T) {
 
     if count != 0 {
         t.Errorf("Not all items were deleted")
+    }
+}
+
+func TestUpdateItem(t *testing.T) {
+    simpleType := customType{}
+    simpleType.Id = singleItemId
+    if err := testInstance.Data.RemoveMany(&simpleType); err != nil {
+        t.Errorf(err.Error())
+        return
+    }
+
+    error := testInstance.Data.Create(&simpleType)
+    if error != nil {
+        t.Errorf(error.Error())
+        return
+    }
+
+    randomValue := 100
+    simpleType.SomeValue = randomValue
+    err := testInstance.Data.Update(&simpleType)
+    if err != nil {
+        t.Errorf(err.Error())
+        return
+    }
+
+    err = testInstance.Data.FindById(singleItemId, &simpleType)
+    if err != nil {
+        t.Errorf(err.Error())
+        return
+    }
+
+    if simpleType.SomeValue != randomValue {
+        t.Errorf("Object not updated correctly on the server")
+        return
     }
 }

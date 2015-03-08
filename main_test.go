@@ -25,7 +25,7 @@ func TestMain(m *testing.M) {
     }
 
     testInstance = New(configuration.APIKey)
-    testInstance.Data.Remove(&customType{})
+    testInstance.Data.RemoveMany(&customType{})
     os.Exit(m.Run())
 }
 

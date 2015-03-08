@@ -4,6 +4,7 @@ import (
     "encoding/json"
     "net/http"
     "io/ioutil"
+    "reflect"
 )
 
 type singleResult struct {
@@ -17,6 +18,15 @@ type countResult struct {
 func (d data) create(contentType string, dataObject interface{}) error {
     dataUrl := getDataUrl(*d.settings, contentType)
     _, err := createRequest(dataUrl, dataObject, d, http.StatusCreated)
+    return err
+}
+
+func (d data) updateSingle(contentType string, dataObject interface{}) error {
+    val := reflect.ValueOf(dataObject)
+    objectId := reflect.Indirect(val).FieldByName("Id").String()
+    dataUrl := getDataUrlWithId(*d.settings, contentType, objectId)
+    _,err := updateRequest(dataUrl, dataObject, nil, http.StatusOK)
+
     return err
 }
 
@@ -47,9 +57,5 @@ func parseForCount(bytedata []byte, countRes *countResult) error {
 func getResponseBody(response *http.Response) (body []byte, err error) {
     byteBody, err := ioutil.ReadAll(response.Body)
     response.Body.Close()
-    if err != nil {
-        return nil, err
-    }
-
-    return byteBody, nil
+    return byteBody, err
 }
